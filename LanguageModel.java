@@ -133,18 +133,18 @@ public class LanguageModel {
         StringBuilder generatedText = new StringBuilder(initialText);
         String window = initialText.substring(initialText.length() - windowLength);
 
-        // Continue until the TOTAL length of generatedText matches textLength
+        // The condition must be strictly LESS THAN to reach the full textLength
         while (generatedText.length() < textLength) {
             List probs = CharDataMap.get(window);
             
             if (probs == null) {
-                break; // Stop if we hit an unknown window
+                break;
             }
 
             char nextChar = getRandomChar(probs);
             generatedText.append(nextChar);
             
-            // Update window using the newly generated character
+            // Ensure the window slides correctly after every new character
             window = generatedText.substring(generatedText.length() - windowLength);
         }
 
