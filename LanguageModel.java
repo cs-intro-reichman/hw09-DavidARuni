@@ -126,31 +126,26 @@ public class LanguageModel {
 	 * @return the generated text
 	 */
 	public String generate(String initialText, int textLength) {
-        // If initial text is too short, we can't form a window to start predicting
         if (initialText.length() < windowLength) {
             return initialText;
         }
 
         StringBuilder generatedText = new StringBuilder(initialText);
-        
-        // The current window is always the last 'windowLength' characters of the generated text
-        String currentWindow = initialText.substring(initialText.length() - windowLength);
+        String window = initialText.substring(initialText.length() - windowLength);
 
-        // Continue generating until we reach the desired total length
+        // Continue until the TOTAL length of generatedText matches textLength
         while (generatedText.length() < textLength) {
-            List probs = CharDataMap.get(currentWindow);
-
-            // If the current window was never seen during training, we must stop
+            List probs = CharDataMap.get(window);
+            
             if (probs == null) {
-                break;
+                break; // Stop if we hit an unknown window
             }
 
-            // Pick a random character based on learned probabilities
             char nextChar = getRandomChar(probs);
             generatedText.append(nextChar);
-
-            // Advance the window: take the last 'windowLength' characters of the updated text
-            currentWindow = generatedText.substring(generatedText.length() - windowLength);
+            
+            // Update window using the newly generated character
+            window = generatedText.substring(generatedText.length() - windowLength);
         }
 
         return generatedText.toString();

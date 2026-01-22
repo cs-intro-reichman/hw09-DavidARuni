@@ -47,12 +47,16 @@ public class List {
     @Override
     public String toString() {
         Node current = first;
-        String result = "";
+        StringBuilder result = new StringBuilder("("); // Start with an opening parenthesis
         while (current != null) {
-            result += current.cp.toString() + " ";
+            result.append(current.cp.toString());
+            if (current.next != null) {
+                result.append(" "); // Add space between elements
+            }
             current = current.next;
         }
-        return result;
+        result.append(")"); // End with a closing parenthesis
+        return result.toString();
     }
 
     /** Returns the index of the first CharData object in this list
