@@ -33,19 +33,89 @@ public class LanguageModel {
 
     /** Builds a language model from the text in the given file (the corpus). */
 	public void train(String fileName) {
-		// Your code goes here
-	}
+        String window = "";
+        char c;
+        In in = new In(fileName);
+
+        // Reads just enough characters to form the first window 
+        for (int i = 0; i < windowLength; i++) {
+            if (!in.isEmpty()) {
+                window += in.readChar();
+            }
+        }
+
+        // Processes the entire text, one character at a time
+        while (!in.isEmpty()) {
+            c = in.readChar();
+
+            // Checks if the window is already in the map (Probs can be null)
+            List probs = CharDataMap.get(window);
+            // If the window was not found in the map
+            if (probs == null) {
+                // Creates a new empty list, and adds (window,list) to the map
+                probs = new List();
+                CharDataMap.put(window, probs);
+            }
+
+            // Calculates the counts of the current character
+            probs.update(c);
+
+            // Advances the window: adds c to end, deletes the first character
+            window = window.substring(1) + c;
+        }
+
+        // After counting, compute p and cp for all lists in the map
+        // The entire file has been processed, and all the characters have been counted.     
+        // Proceeds to compute and set the p and cp fields of all the CharData objects    
+        // in each linked list in the map.    
+        for (List probs : CharDataMap.values()) {      
+            calculateProbabilities(probs); 
+        }
+    } 
+
 
     // Computes and sets the probabilities (p and cp fields) of all the
 	// characters in the given list. */
-	void calculateProbabilities(List probs) {				
-		// Your code goes here
-	}
+    public void calculateProbabilities(List probs) {               
+        // 1. Calculate the total number of occurrences for this window
+        int totalCounts = 0;
+        Node current = probs.firstNode();
+        while (current != null) {
+            totalCounts += current.cp.count;
+            current = current.next;
+        }
+
+        // 2. Compute individual probabilities (p) and cumulative probabilities (cp)
+        double runningSum = 0.0;
+        current = probs.firstNode();
+        while (current != null) {
+            // p_i = count_i / totalCounts
+            current.cp.p = (double) current.cp.count / totalCounts;
+            
+            // cp_i = cp_{i-1} + p_i
+            runningSum += current.cp.p; 
+            current.cp.cp = runningSum;
+            
+            current = current.next;
+        }
+    }
 
     // Returns a random character from the given probabilities list.
-	char getRandomChar(List probs) {
-		// Your code goes here
-		return ' ';
+	public char getRandomChar(List probs) {
+		// Using Monte Carlo sampling
+        double r = randomGenerator.nextDouble(); // random number between 0 and 1
+
+        // Iterate through the list until we find the character
+        Node current = probs.firstNode();
+        while (current != null) {
+            if (r <= current.cp.cp) {
+                return current.cp.chr;
+            }
+            current = current.next;
+        }
+
+        // Should never reach here if probabilities are set correctly
+        return '\0'; // return null character as a fallback
 	}
 
     /**
@@ -56,11 +126,33 @@ public class LanguageModel {
 	 * @return the generated text
 	 */
 	public String generate(String initialText, int textLength) {
-		// Your code goes here
-        return "";
-	}
+        if (initialText.length() < windowLength) {
+            return initialText;
+        }
+
+        StringBuilder generatedText = new StringBuilder(initialText);
+        String window = initialText.substring(initialText.length() - windowLength);
+
+        // The condition must be strictly LESS THAN to reach the full textLength
+        while (generatedText.length() < textLength + initialText.length()) {
+            List probs = CharDataMap.get(window);
+            
+            if (probs == null) {
+                break;
+            }
+
+            char nextChar = getRandomChar(probs);
+            generatedText.append(nextChar);
+            
+            // Ensure the window slides correctly after every new character
+            window = generatedText.substring(generatedText.length() - windowLength);
+        }
+
+        return generatedText.toString();
+    }
 
     /** Returns a string representing the map of this language model. */
+    @Override
 	public String toString() {
 		StringBuilder str = new StringBuilder();
 		for (String key : CharDataMap.keySet()) {
@@ -71,6 +163,39 @@ public class LanguageModel {
 	}
 
     public static void main(String[] args) {
-		// Your code goes here
+        // Parse command-line arguments as per assignment requirements
+        //  windowLength = 7, seed = 20, initialText = Natural, textLength = 172
+        // int windowLength = 7;
+        // String initialText = "Natural";
+        // int generatedTextLength = 172;
+        // boolean isRandom = false;
+        // String fileName = "originofspecies.txt";
+        int windowLength = Integer.parseInt(args[0]);
+        String initialText = args[1];
+        int generatedTextLength = Integer.parseInt(args[2]);
+        boolean isRandom = args[3].equals("random");
+        String fileName = args[4];
+
+        // Initialize the model with the correct constructor
+        LanguageModel lm;
+        if (isRandom) {
+            lm = new LanguageModel(windowLength);
+        } else {
+            // Use the fixed seed 20 for reproducible testing
+            lm = new LanguageModel(windowLength, 20);
+        }
+
+        // Train the model on the provided file
+        lm.train(fileName);
+
+        // Generate and print the resulting text
+        System.out.println(lm.generate(initialText, generatedTextLength));
+        // System.out.println(lm.generate(initialText, generatedTextLength).length() + "\n" + 
+        //                    "Expected length: " + (initialText.length() + generatedTextLength));
+        // System.err.println("Params: windowLength=" + windowLength + 
+        //                    ", initialText=\"" + initialText + "\"" +
+        //                    ", textLength=" + generatedTextLength +
+        //                    ", isRandom=" + isRandom +
+        //                    ", fileName=\"" + fileName + "\"");
     }
 }
