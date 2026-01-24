@@ -134,7 +134,7 @@ public class LanguageModel {
         String window = initialText.substring(initialText.length() - windowLength);
 
         // The condition must be strictly LESS THAN to reach the full textLength
-        while (generatedText.length() < textLength) {
+        while (generatedText.length() < textLength + initialText.length()) {
             List probs = CharDataMap.get(window);
             
             if (probs == null) {
@@ -164,11 +164,17 @@ public class LanguageModel {
 
     public static void main(String[] args) {
         // Parse command-line arguments as per assignment requirements
-        int windowLength = Integer.parseInt(args[0]);
-        String initialText = args[1];
-        int generatedTextLength = Integer.parseInt(args[2]);
-        boolean isRandom = args[3].equals("random");
-        String fileName = args[4];
+        //  windowLength = 7, seed = 20, initialText = Natural, textLength = 172
+        int windowLength = 7;
+        String initialText = "Natural";
+        int generatedTextLength = 172;
+        boolean isRandom = false;
+        String fileName = "originofspecies.txt";
+        // int windowLength = Integer.parseInt(args[0]);
+        // String initialText = args[1];
+        // int generatedTextLength = Integer.parseInt(args[2]);
+        // boolean isRandom = args[3].equals("random");
+        // String fileName = args[4];
 
         // Initialize the model with the correct constructor
         LanguageModel lm;
@@ -184,5 +190,12 @@ public class LanguageModel {
 
         // Generate and print the resulting text
         System.out.println(lm.generate(initialText, generatedTextLength));
+        // System.out.println(lm.generate(initialText, generatedTextLength).length() + "\n" + 
+        //                    "Expected length: " + (initialText.length() + generatedTextLength));
+        // System.err.println("Params: windowLength=" + windowLength + 
+        //                    ", initialText=\"" + initialText + "\"" +
+        //                    ", textLength=" + generatedTextLength +
+        //                    ", isRandom=" + isRandom +
+        //                    ", fileName=\"" + fileName + "\"");
     }
 }
